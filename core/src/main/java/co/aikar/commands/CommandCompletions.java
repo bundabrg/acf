@@ -168,16 +168,49 @@ public class CommandCompletions <C extends CommandCompletionContext> {
         return completion;
     }
 
+    /**
+     * Return a list of completions, merging in parmeter completions
+     *
+     * Note: This assumes a single completion to a consuming parmeter which may not necessarily be the case
+     */
+    List<String> resolveCompletions(RegisteredCommand cmd, String[] args) {
+        List<String> cmdCompletions = new ArrayList<>(Arrays.asList(ACFPatterns.SPACE.split(cmd.complete)));
+        List<String> completions = new ArrayList<>();
+        List<CommandParameter> parameters = new ArrayList<>(Arrays.asList(cmd.parameters));
+
+        while (parameters.size() > 0) {
+            CommandParameter parameter = parameters.remove(0);
+
+            // Doesn't consume any input
+            if (!parameter.canConsumeInput()) {
+                continue;
+            }
+
+            if (parameter.getComplete() != null) {
+                // Parameter provides its own completions
+                String[] parameterCompletions = ACFPatterns.SPACE.split(parameter.getComplete());
+                completions.addAll(Arrays.asList(parameterCompletions));
+            } else {
+                // Out of command completions
+                if (cmdCompletions.size() == 0) {
+                    break;
+                }
+                completions.add(cmdCompletions.remove(0));
+            }
+        }
+        return completions;
+    }
+
     @NotNull
     List<String> of(RegisteredCommand cmd, CommandIssuer sender, String[] args, boolean isAsync) {
-        String[] completions = ACFPatterns.SPACE.split(cmd.complete);
         final int argIndex = args.length - 1;
 
-        String input = args[argIndex];
+        List<String> completions = resolveCompletions(cmd, args);
 
-        String completion = argIndex < completions.length ? completions[argIndex] : null;
-        if (completion == null && completions.length > 0) {
-            completion = completions[completions.length - 1];
+        String input = args[argIndex];
+        String completion = argIndex < completions.size() ? completions.get(argIndex) : null;
+        if (completion == null && completions.size() > 0) {
+            completion = completions.get(completions.size() -1);
         }
         if (completion == null) {
             return Collections.singletonList(input);

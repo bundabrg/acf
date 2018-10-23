@@ -36,10 +36,13 @@ import java.lang.annotation.Target;
  * or special @codes that let you define Completion Handlers to dynamically
  * populate completion values.
  *
+ * If used on a parameter it provides completion(s) for that parameter and will not
+ * consume any provided on the Method
+ *
  * @see {@link co.aikar.commands.CommandCompletions}
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.PARAMETER})
 public @interface CommandCompletion {
     String value();
 }
